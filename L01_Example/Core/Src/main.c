@@ -15,7 +15,7 @@
   *
   ******************************************************************************
   */
-#define TASK 1
+#define TASK 6
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -86,7 +86,7 @@ GPIO_PinState LD4_State = GPIO_PIN_RESET;
 #endif // TASK #5
 #if TASK == 6
 volatile _Bool ENC_CLK_EdgeDetected = 0;
-int ENC_Cnt = 0;
+int ENC_Cnt = 100;
 #endif // TASK #6
 /* USER CODE END PV */
 
@@ -258,22 +258,30 @@ int main(void)
     }
     #endif // TASK #5
     #if TASK == 6
+    static unsigned int LD_Tim = 0;
     if(ENC_CLK_EdgeDetected)
     {
-      HAL_Delay(0);
+      GPIO_PinState ENC_DT_State = HAL_GPIO_ReadPin(ENC_DT_GPIO_Port, ENC_DT_Pin);
+      LD_Tim = (LD_Tim+5) % ENC_Cnt;
+      HAL_Delay(5);
       ENC_CLK_EdgeDetected = 0;
       if(HAL_GPIO_ReadPin(ENC_CLK_GPIO_Port, ENC_CLK_Pin) == GPIO_PIN_RESET)
       {
-        if(HAL_GPIO_ReadPin(ENC_DT_GPIO_Port, ENC_DT_Pin) == GPIO_PIN_RESET)
-          ENC_Cnt++;
+        if(ENC_DT_State == GPIO_PIN_RESET)
+          ENC_Cnt += 10;
         else
-          ENC_Cnt--;
+          ENC_Cnt -= 10;
 
+        if(ENC_Cnt > 1000)
+          ENC_Cnt = 1000;
+        if(ENC_Cnt < 100)
+          ENC_Cnt = 100;
       }
     }
-
-    /// TODO: Add LED blinking routing with variable frequency
-
+    LD_Tim = (LD_Tim+1) % ENC_Cnt;
+    if(LD_Tim == 0)
+      HAL_GPIO_TogglePin(LD5_GPIO_Port, LD5_Pin);
+    HAL_Delay(0);
     #endif // TASK #6
     /* USER CODE END WHILE */
 
