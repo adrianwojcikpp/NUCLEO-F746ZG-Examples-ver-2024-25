@@ -14,7 +14,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include "serial_api.h"
-#ifdef SERIAL_API_JSON
 #include "jsmn.h"
 
 /* Private typedef -----------------------------------------------------------*/
@@ -80,7 +79,7 @@ _Bool __jsmn_tok_keyvalue_cmp(const char *json, jsmntok_t *tok, const char *str,
  * @param[in]     leds_len  : Serial API LED control structure array's length
  * @retval Parsing status: 0 if successful, <0 otherwise
  */
-int SERIAL_API_LED_ReadMsg(const char* msg, SERIAL_API_LED_TypeDef* leds, int leds_len)
+int SERIAL_API_LED_ReadMsg_JSON(const char* msg, SERIAL_API_LED_TypeDef* leds, int leds_len)
 {
   jsmn_init(&JSMN_PARSER);
   int r = jsmn_parse(&JSMN_PARSER, msg, strlen(msg), JSMN_TOK, sizeof(JSMN_TOK) / sizeof(JSMN_TOK[0]));
@@ -143,8 +142,6 @@ int SERIAL_API_LED_ReadMsg(const char* msg, SERIAL_API_LED_TypeDef* leds, int le
   return 0;
 }
 
-#else
-
 /* Public functions ----------------------------------------------------------*/
 
 /**
@@ -154,8 +151,7 @@ int SERIAL_API_LED_ReadMsg(const char* msg, SERIAL_API_LED_TypeDef* leds, int le
  * @param[in]     leds_len  : Serial API LED control structure array's length
  * @retval Parsing status: 0 if successful, <0 otherwise
  */
-
-int SERIAL_API_LED_ReadMsg(const char* msg, SERIAL_API_LED_TypeDef* leds, int leds_len)
+int SERIAL_API_LED_ReadMsg_PlainText(const char* msg, SERIAL_API_LED_TypeDef* leds, int leds_len)
 {
   for(int i = 0; i < leds_len; i++)
   {
@@ -167,5 +163,3 @@ int SERIAL_API_LED_ReadMsg(const char* msg, SERIAL_API_LED_TypeDef* leds, int le
   return 0;
 }
 
-
-#endif

@@ -18,10 +18,12 @@
 /* Public typedef ------------------------------------------------------------*/
 
 /* Public define -------------------------------------------------------------*/
-#ifdef SERIAL_API_JSON
+#if TASK == 6
 #define SERIAL_API_LED_MSG_LEN 124
+#define SERIAL_API_LED_ReadMsg SERIAL_API_LED_ReadMsg_JSON
 #else
 #define SERIAL_API_LED_MSG_LEN 4
+#define SERIAL_API_LED_ReadMsg SERIAL_API_LED_ReadMsg_PlainText
 #endif
 
 /* Public macro --------------------------------------------------------------*/

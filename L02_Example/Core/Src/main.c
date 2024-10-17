@@ -15,7 +15,7 @@
   *
   ******************************************************************************
   */
-#define TASK 7
+#define TASK 1
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -42,9 +42,6 @@
 #include "serial_api_config.h"
 #endif
 #if TASK == 6
-// To use 'serial_api' with JSON
-// add SERIAL_API_JSON symbol to project properties
-// Project -> Properties -> C/C++ -> Paths and Symbols -> Symbols -> Add..
 #include "serial_api_config.h"
 #endif
 #if TASK == 7
@@ -264,6 +261,7 @@ int main(void)
     unsigned char Message = '\0';
     HAL_StatusTypeDef USART3_RxStatus = HAL_UART_Receive(&huart3, &Message, 1, 100);
     LED_DIO_AllOff();
+
     if(USART3_RxStatus == HAL_OK)
     {
       LED_DIO_On(&hld1);
@@ -286,7 +284,7 @@ int main(void)
     }
     #endif
     #if TASK == 7
-    char Message[SERIAL_API_LED_MSG_LEN+2]; // EOF + Null character
+    char Message[SERIAL_API_LED_MSG_LEN+2]; // CR + Null character
     int ReadoutStatus = scanf("%s",  Message);
     if(ReadoutStatus == 1)
     {
