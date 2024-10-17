@@ -15,7 +15,7 @@
   *
   ******************************************************************************
   */
-#define TASK 5
+#define TASK 7
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -24,70 +24,65 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#if TASK == 1
+#include "led_config.h"
+#endif
+#if TASK == 2
+#include <stdio.h>
+#include "btn_config.h"
+#include "led_config.h"
+#endif
+#if TASK == 3
+#include "led_config.h"
+#endif
+#if TASK == 4
+#include "led_config.h"
+#endif
+#if TASK == 5
+#include "serial_api_config.h"
+#endif
+#if TASK == 6
+// To use 'serial_api' with JSON
+// add SERIAL_API_JSON symbol to project properties
+// Project -> Properties -> C/C++ -> Paths and Symbols -> Symbols -> Add..
+#include "serial_api_config.h"
+#endif
+#if TASK == 7
+#include <stdio.h>
+#include "led_config.h"
+#include "serial_api_config.h"
+#endif
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-#if TASK == 5
-typedef struct {
-  _Bool EdgeDetected;
-  _Bool PullUp;
-  GPIO_TypeDef *Port;
-  uint16_t Pin;
-} Button_TypeDef;
-#endif // TASK #5
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#if TASK == 1
-#define LD_N 3
-#endif // TASK #2
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-#if TASK == 5
-#define BTN_EdgeDetected(hbtn)  ((HAL_GPIO_ReadPin((hbtn)->Port, (hbtn)->Pin)) == (hbtn)->PullUp)
-#endif // TASK #5
+
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-#if TASK == 1
-GPIO_PinState LD_State[LD_N] = { GPIO_PIN_RESET, };
-uint8_t LD_Cnt = 0;
-const uint16_t LD_Pins[LD_N] = {
-    LD1_Pin,
-    LD2_Pin,
-    LD3_Pin
-};
-GPIO_TypeDef* LD_GPIO_Port = GPIOB;
-#endif // TASK #1
-#if TASK == 2
-GPIO_PinState USER_Btn_State = GPIO_PIN_RESET;
-GPIO_PinState USER_Btn_StatePrev = GPIO_PIN_RESET;
-GPIO_PinState LD1_State = GPIO_PIN_RESET;
-#endif // TASK #2
-#if TASK == 3
-volatile _Bool USER_Btn_RisingEdgeDetected = 0;
-GPIO_PinState LD1_State = GPIO_PIN_RESET;
-#endif // TASK #3
 #if TASK == 4
-volatile _Bool ON_Btn_FallingEdgeDetected = 0;
-GPIO_PinState LD4_State = GPIO_PIN_RESET;
-#endif // TASK #4
+unsigned char Message;
+#endif
 #if TASK == 5
-Button_TypeDef ON_Btn  = { 0, 0, ON_Btn_GPIO_Port,  ON_Btn_Pin  };
-Button_TypeDef OFF_Btn = { 0, 1, OFF_Btn_GPIO_Port, OFF_Btn_Pin };
-GPIO_PinState LD4_State = GPIO_PIN_RESET;
-#endif // TASK #5
+unsigned char Message[SERIAL_API_LED_MSG_LEN+1];
+#endif
 #if TASK == 6
-volatile _Bool ENC_CLK_EdgeDetected = 0;
-int ENC_Cnt = 100;
-#endif // TASK #6
+unsigned int MessageIndex = 0;
+unsigned char Message[SERIAL_API_LED_MSG_LEN+1];
+_Bool MessageReceived = 0;
+#endif
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -98,56 +93,95 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-#if TASK == 3
-/**
-  * @brief  EXTI line detection callbacks.
-  * @param  GPIO_Pin Specifies the pins connected EXTI line
-  * @retval None
-  */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-  if(GPIO_Pin == USER_Btn_Pin)
-    USER_Btn_RisingEdgeDetected = 1;
-}
-#endif // TASK #3
 #if TASK == 4
 /**
-  * @brief  EXTI line detection callbacks.
-  * @param  GPIO_Pin Specifies the pins connected EXTI line
+  * @brief Tx Transfer completed callback.
+  * @param huart UART handle.
   * @retval None
   */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-  if(GPIO_Pin == ON_Btn_Pin)
-    ON_Btn_FallingEdgeDetected = 1;
+  if(huart == &huart3)
+  {
+    LED_DIO_Off(&hld1);
+    HAL_UART_Receive_IT(&huart3, &Message, 1);
+  }
 }
-#endif // TASK #4
+
+/**
+  * @brief  Rx Transfer completed callback.
+  * @param  huart UART handle.
+  * @retval None
+  */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  if(huart == &huart3)
+  {
+    LED_DIO_On(&hld1);
+    HAL_UART_Transmit_IT(&huart3, &Message, 1);
+  }
+}
+#endif
 #if TASK == 5
 /**
-  * @brief  EXTI line detection callbacks.
-  * @param  GPIO_Pin Specifies the pins connected EXTI line
+  * @brief  Rx Transfer completed callback.
+  * @param  huart UART handle.
   * @retval None
   */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-  if(GPIO_Pin == ON_Btn.Pin)
-    ON_Btn.EdgeDetected = 1;
-  if(GPIO_Pin == OFF_Btn.Pin)
-    OFF_Btn.EdgeDetected = 1;
+  if(huart == &huart3)
+  {
+    unsigned int hleds_n = sizeof(hleds) / sizeof(hleds[0]);
+    SERIAL_API_LED_ReadMsg((char*)Message, hleds, hleds_n);
+    for(int i = 0; i < hleds_n; i++)
+      LED_DIO_Write(hleds[i].Led, hleds[i].State);
+    HAL_UART_Receive_IT(&huart3, Message, SERIAL_API_LED_MSG_LEN);
+  }
 }
-#endif // TASK #5
+#endif
 #if TASK == 6
 /**
-  * @brief  EXTI line detection callbacks.
-  * @param  GPIO_Pin Specifies the pins connected EXTI line
+  * @brief  Rx Transfer completed callback.
+  * @param  huart UART handle.
   * @retval None
   */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-  if(GPIO_Pin == ENC_CLK_Pin)
-    ENC_CLK_EdgeDetected = 1;
+  if(huart == &huart3)
+  {
+    MessageIndex++;
+    if(MessageIndex == SERIAL_API_LED_MSG_LEN || Message[MessageIndex-1] == '\r')
+    {
+      MessageReceived = 1;
+      MessageIndex = 0;
+    }
+    else
+      HAL_UART_Receive_IT(&huart3, &Message[MessageIndex], 1);
+  }
 }
-#endif // TASK #6
+#endif
+#if TASK == 7
+int _write(int file, char *ptr, int len)
+{
+  HAL_UART_Transmit(&huart3, (uint8_t*)ptr, len, HAL_MAX_DELAY);
+  return len;
+}
+
+int _read(int file, char *ptr, int len)
+{
+  int msg_len = 0;
+  while(msg_len <= len)
+  {
+    HAL_UART_Receive(&huart3, (uint8_t*)ptr, 1, HAL_MAX_DELAY);
+    msg_len++;
+    if(*ptr == '\r')
+      break;
+    ptr++;
+  }
+  return msg_len;
+}
+#endif
 /* USER CODE END 0 */
 
 /**
@@ -181,108 +215,87 @@ int main(void)
   MX_GPIO_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-
+  #if TASK == 1
+  unsigned char Message[] = "Hello, Nucleo!\r\n";
+  HAL_StatusTypeDef USART3_TxStatus = HAL_UART_Transmit(&huart3, Message, sizeof(Message) - 1, 10);
+  if(USART3_TxStatus == HAL_OK)
+    LED_DIO_On(&hld1);
+  else
+    LED_DIO_On(&hld3);
+  #endif
+  #if TASK == 4
+  HAL_UART_Receive_IT(&huart3, &Message, 1);
+  #endif
+  #if TASK == 5
+  HAL_UART_Receive_IT(&huart3, Message, SERIAL_API_LED_MSG_LEN);
+  #endif
+  #if TASK == 6
+  HAL_UART_Receive_IT(&huart3, &Message[MessageIndex], 1);
+  #endif
+  #if TASK == 7
+  puts("Hello, Nucleo!");
+  #endif
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    #if TASK == 1
-    LD_Cnt = (LD_Cnt+1) % LD_N;
-
-    for(int i = 0; i < LD_N; i++)
-      HAL_GPIO_WritePin(LD_GPIO_Port, LD_Pins[i], GPIO_PIN_RESET);
-
-    HAL_GPIO_WritePin(LD_GPIO_Port, LD_Pins[LD_Cnt], GPIO_PIN_SET);
-
-    for(int i = 0; i < LD_N; i++)
-      LD_State[i] = HAL_GPIO_ReadPin(LD_GPIO_Port, LD_Pins[i]);
-
-    HAL_Delay(100);
-    #endif // TASK #1
     #if TASK == 2
-    USER_Btn_State = HAL_GPIO_ReadPin(USER_Btn_GPIO_Port, USER_Btn_Pin);
-    if((USER_Btn_State == GPIO_PIN_SET) && (USER_Btn_StatePrev == GPIO_PIN_RESET))
+    if(BTN_DIO_EdgeDetected(&husrbtn) == BTN_PRESSED_EDGE)
     {
-      HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
-      LD1_State = HAL_GPIO_ReadPin(LD1_GPIO_Port, LD1_Pin);
-    }
-    USER_Btn_StatePrev = USER_Btn_State;
-    HAL_Delay(10);
-    #endif // TASK #2
-    #if TASK == 3
-    if(USER_Btn_RisingEdgeDetected)
-    {
-      HAL_Delay(10);
-      USER_Btn_RisingEdgeDetected = 0;
-      if(HAL_GPIO_ReadPin(USER_Btn_GPIO_Port, USER_Btn_Pin) == GPIO_PIN_SET)
-      {
-        HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
-        LD1_State = HAL_GPIO_ReadPin(LD1_GPIO_Port, LD1_Pin);
-      }
-    }
-    #endif // TASK #3
-    #if TASK == 4
-    if(ON_Btn_FallingEdgeDetected)
-    {
-      HAL_Delay(10);
-      ON_Btn_FallingEdgeDetected = 0;
-      if(HAL_GPIO_ReadPin(ON_Btn_GPIO_Port, ON_Btn_Pin) == GPIO_PIN_RESET)
-      {
-        HAL_GPIO_TogglePin(LD4_GPIO_Port, LD4_Pin | LD5_Pin | LD6_Pin);
-        LD4_State = HAL_GPIO_ReadPin(LD4_GPIO_Port, LD4_Pin);
-      }
-    }
-    #endif // TASK #4
-    #if TASK == 5
-    if(ON_Btn.EdgeDetected)
-    {
-      HAL_Delay(10);
-      ON_Btn.EdgeDetected = 0;
-      if(BTN_EdgeDetected(&ON_Btn))
-      {
-        HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_SET);
-        LD4_State = HAL_GPIO_ReadPin(LD4_GPIO_Port, LD4_Pin);
-      }
-    }
-    if(OFF_Btn.EdgeDetected)
-    {
-      HAL_Delay(10);
-      OFF_Btn.EdgeDetected = 0;
-      if(BTN_EdgeDetected(&OFF_Btn))
-      {
-        HAL_GPIO_WritePin(LD4_GPIO_Port, LD4_Pin, GPIO_PIN_RESET);
-        LD4_State = HAL_GPIO_ReadPin(LD4_GPIO_Port, LD4_Pin);
-      }
-    }
-    #endif // TASK #5
-    #if TASK == 6
-    static unsigned int LD_Tim = 0;
-    if(ENC_CLK_EdgeDetected)
-    {
-      GPIO_PinState ENC_DT_State = HAL_GPIO_ReadPin(ENC_DT_GPIO_Port, ENC_DT_Pin);
-      LD_Tim = (LD_Tim+5) % ENC_Cnt;
-      HAL_Delay(5);
-      ENC_CLK_EdgeDetected = 0;
-      if(HAL_GPIO_ReadPin(ENC_CLK_GPIO_Port, ENC_CLK_Pin) == GPIO_PIN_RESET)
-      {
-        if(ENC_DT_State == GPIO_PIN_RESET)
-          ENC_Cnt += 10;
-        else
-          ENC_Cnt -= 10;
+      static unsigned int USER_Btn_Cnt = 0;
+      USER_Btn_Cnt++;
 
-        if(ENC_Cnt > 1000)
-          ENC_Cnt = 1000;
-        if(ENC_Cnt < 100)
-          ENC_Cnt = 100;
-      }
+      unsigned char Message[32];
+      int MessageLen = snprintf((char*)Message, sizeof(Message), "Hello, Nucleo: #%d\r\n", USER_Btn_Cnt);
+
+      HAL_StatusTypeDef USART3_TxStatus = HAL_UART_Transmit(&huart3, Message, MessageLen, 10);
+
+      LED_DIO_AllOff();
+      if(USART3_TxStatus == HAL_OK)
+        LED_DIO_On(&hld1);
+      else
+        LED_DIO_On(&hld3);
     }
-    LD_Tim = (LD_Tim+1) % ENC_Cnt;
-    if(LD_Tim == 0)
-      HAL_GPIO_TogglePin(LD5_GPIO_Port, LD5_Pin);
-    HAL_Delay(0);
-    #endif // TASK #6
+    HAL_Delay(50);
+    #endif
+    #if TASK == 3
+    unsigned char Message = '\0';
+    HAL_StatusTypeDef USART3_RxStatus = HAL_UART_Receive(&huart3, &Message, 1, 100);
+    LED_DIO_AllOff();
+    if(USART3_RxStatus == HAL_OK)
+    {
+      LED_DIO_On(&hld1);
+      HAL_UART_Transmit(&huart3, &Message, 1, 10);
+    }
+    else if(USART3_RxStatus == HAL_TIMEOUT)
+      LED_DIO_On(&hld2);
+    else
+      LED_DIO_On(&hld3);
+    #endif
+    #if TASK == 6
+    if(MessageReceived)
+    {
+      MessageReceived = 0;
+      unsigned int hleds_n = sizeof(hleds) / sizeof(hleds[0]);
+      SERIAL_API_LED_ReadMsg((char*)Message, hleds, hleds_n);
+      for(int i = 0; i < hleds_n; i++)
+        LED_DIO_Write(hleds[i].Led, hleds[i].State);
+      HAL_UART_Receive_IT(&huart3, &Message[MessageIndex], 1);
+    }
+    #endif
+    #if TASK == 7
+    char Message[SERIAL_API_LED_MSG_LEN+2]; // EOF + Null character
+    int ReadoutStatus = scanf("%s",  Message);
+    if(ReadoutStatus == 1)
+    {
+      unsigned int hleds_n = sizeof(hleds) / sizeof(hleds[0]);
+      SERIAL_API_LED_ReadMsg((char*)Message, hleds, hleds_n);
+      for(int i = 0; i < hleds_n; i++)
+        LED_DIO_Write(hleds[i].Led, hleds[i].State);
+    }
+    #endif
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
