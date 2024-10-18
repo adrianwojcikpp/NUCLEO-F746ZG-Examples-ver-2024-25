@@ -19,7 +19,7 @@
 
 /* Public define -------------------------------------------------------------*/
 #if TASK == 6
-#define SERIAL_API_LED_MSG_LEN 124
+#define SERIAL_API_LED_MSG_LEN 128
 #define SERIAL_API_LED_ReadMsg SERIAL_API_LED_ReadMsg_JSON
 #else
 #define SERIAL_API_LED_MSG_LEN 4
