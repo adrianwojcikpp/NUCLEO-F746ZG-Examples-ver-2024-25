@@ -15,7 +15,7 @@
   *
   ******************************************************************************
   */
-#define TASK 1
+#define TASK 7
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -161,22 +161,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 #if TASK == 7
 int _write(int file, char *ptr, int len)
 {
-  HAL_UART_Transmit(&huart3, (uint8_t*)ptr, len, HAL_MAX_DELAY);
-  return len;
+  return (HAL_UART_Transmit(&huart3, (uint8_t*)ptr, len, HAL_MAX_DELAY) == HAL_OK) ? len : -1;
 }
 
 int _read(int file, char *ptr, int len)
 {
-  int msg_len = 0;
-  while(msg_len <= len)
-  {
-    HAL_UART_Receive(&huart3, (uint8_t*)ptr, 1, HAL_MAX_DELAY);
-    msg_len++;
-    if(*ptr == '\r')
-      break;
-    ptr++;
-  }
-  return msg_len;
+  return (HAL_UART_Receive(&huart3, (uint8_t*)ptr, len, HAL_MAX_DELAY) == HAL_OK) ? len : -1;
 }
 #endif
 /* USER CODE END 0 */
@@ -189,7 +179,9 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+  #if TASK == 7
+  setvbuf(stdin, NULL, _IONBF, 0);
+  #endif
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
