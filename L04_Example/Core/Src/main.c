@@ -15,7 +15,7 @@
   *
   ******************************************************************************
   */
-#define TASK 4
+#define TASK 1
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -25,14 +25,26 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#if TASK == 1
+#include "led_config.h"
+#endif
+#if TASK == 2
+#include "led_config.h"
+#endif
 #if TASK == 3
 #include <stdio.h>
+#include "led_config.h"
 #endif
 #if TASK == 4
 #include <stdio.h>
+#include "led_config.h"
 #endif
 #if TASK == 5
+#include "encoder_config.h"
+#endif
+#if TASK == 6
 #include <stdio.h>
+#include "encoder_config.h"
 #endif
 /* USER CODE END Includes */
 
@@ -54,25 +66,11 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-#if TASK == 1
-GPIO_PinState LD1_State;
-#endif
 #if TASK == 2
-GPIO_PinState LD1_State;
-#endif
-#if TASK == 3
-GPIO_PinState LD1_State;
-uint32_t TimerAutoreloadRegister;
-#endif
-#if TASK == 4
-GPIO_PinState LD1_State;
-GPIO_PinState TRIG_State;
-uint32_t TimerAutoreloadRegister;
+float duty_cycle = 0.0f;
 #endif
 #if TASK == 5
-GPIO_PinState LD1_State;
-GPIO_PinState TRIG_State;
-uint32_t TimerAutoreloadRegister;
+unsigned int encoder_counter = 0;
 #endif
 /* USER CODE END PV */
 
@@ -84,118 +82,7 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-#if TASK == 2
-/**
-  * @brief  Period elapsed callback in non-blocking mode
-  * @param  htim TIM handle
-  * @retval None
-  */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-  if(htim == &htim7)
-  {
-    HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
-    LD1_State = HAL_GPIO_ReadPin(LD1_GPIO_Port, LD1_Pin);
-  }
-}
-#endif
-#if TASK == 3
-/**
-  * @brief  Period elapsed callback in non-blocking mode
-  * @param  htim TIM handle
-  * @retval None
-  */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-  if(htim == &htim7)
-  {
-    HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
-    LD1_State = HAL_GPIO_ReadPin(LD1_GPIO_Port, LD1_Pin);
-  }
-}
-#endif
-#if TASK == 4
-/**
-  * @brief  EXTI line detection callbacks.
-  * @param  GPIO_Pin Specifies the pins connected EXTI line
-  * @retval None
-  */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-  if(GPIO_Pin == USER_Btn_Pin)
-  {
-    HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
-    LD1_State = HAL_GPIO_ReadPin(LD1_GPIO_Port, LD1_Pin);
-    __HAL_TIM_SET_COUNTER(&htim7, 0);
-    __HAL_TIM_SET_AUTORELOAD(&htim7, TimerAutoreloadRegister);
-    HAL_TIM_Base_Start_IT(&htim7);
-  }
-}
-/**
-  * @brief  Period elapsed callback in non-blocking mode
-  * @param  htim TIM handle
-  * @retval None
-  */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-  if(htim == &htim7)
-  {
-    HAL_TIM_Base_Stop_IT(&htim7);
-    HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
-    LD1_State = HAL_GPIO_ReadPin(LD1_GPIO_Port, LD1_Pin);
-    HAL_GPIO_WritePin(TRIG_GPIO_Port, TRIG_Pin, GPIO_PIN_SET);
-    TRIG_State = HAL_GPIO_ReadPin(TRIG_GPIO_Port, TRIG_Pin);
-    HAL_TIM_Base_Start_IT(&htim11);
-  }
-  if(htim == &htim11)
-  {
-    HAL_TIM_Base_Stop_IT(&htim11);
-    HAL_GPIO_WritePin(TRIG_GPIO_Port, TRIG_Pin, GPIO_PIN_RESET);
-    TRIG_State = HAL_GPIO_ReadPin(TRIG_GPIO_Port, TRIG_Pin);
-  }
-}
-#endif
-#if TASK == 5
-/**
-  * @brief  EXTI line detection callbacks.
-  * @param  GPIO_Pin Specifies the pins connected EXTI line
-  * @retval None
-  */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-  if(GPIO_Pin == SYNC_Pin)
-  {
-    HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
-    LD1_State = HAL_GPIO_ReadPin(LD1_GPIO_Port, LD1_Pin);
-    __HAL_TIM_SET_COUNTER(&htim7, 0);
-    __HAL_TIM_SET_AUTORELOAD(&htim7, TimerAutoreloadRegister);
-    HAL_TIM_Base_Start_IT(&htim7);
-  }
-}
-/**
-  * @brief  Period elapsed callback in non-blocking mode
-  * @param  htim TIM handle
-  * @retval None
-  */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-  if(htim == &htim7)
-  {
-    HAL_TIM_Base_Stop_IT(&htim7);
-    HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
-    LD1_State = HAL_GPIO_ReadPin(LD1_GPIO_Port, LD1_Pin);
-    HAL_GPIO_WritePin(TRIG_GPIO_Port, TRIG_Pin, GPIO_PIN_SET);
-    TRIG_State = HAL_GPIO_ReadPin(TRIG_GPIO_Port, TRIG_Pin);
-    HAL_TIM_Base_Start_IT(&htim11);
-  }
-  if(htim == &htim11)
-  {
-    HAL_TIM_Base_Stop_IT(&htim11);
-    HAL_GPIO_WritePin(TRIG_GPIO_Port, TRIG_Pin, GPIO_PIN_RESET);
-    TRIG_State = HAL_GPIO_ReadPin(TRIG_GPIO_Port, TRIG_Pin);
-  }
-}
-#endif
+
 /* USER CODE END 0 */
 
 /**
@@ -228,23 +115,27 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART3_UART_Init();
-  MX_TIM7_Init();
-  MX_TIM11_Init();
+  MX_TIM4_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
-  #if TASK == 1
-  HAL_TIM_Base_Start(&htim7);
+	#if TASK == 1
+  LED_RGB_PWM_Init(&hldrgb);
+  LED_PWM_WriteDuty(hldrgb.R, 50.0f);
   #endif
   #if TASK == 2
-  HAL_TIM_Base_Start_IT(&htim7);
+  LED_RGB_PWM_Init(&hldrgb);
   #endif
   #if TASK == 3
-  HAL_TIM_Base_Start_IT(&htim7);
+  LED_RGB_PWM_Init(&hldrgb);
   #endif
   #if TASK == 4
-  TimerAutoreloadRegister = __HAL_TIM_GET_AUTORELOAD(&htim7);
+  LED_RGB_PWM_Init(&hldrgb);
   #endif
   #if TASK == 5
-  TimerAutoreloadRegister = __HAL_TIM_GET_AUTORELOAD(&htim7);
+  ENC_Init(&henc1);
+  #endif
+  #if TASK == 6
+  ENC_Init(&henc1);
   #endif
   /* USER CODE END 2 */
 
@@ -252,58 +143,57 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    #if TASK == 1
-    if(__HAL_TIM_GET_FLAG(&htim7, TIM_FLAG_UPDATE))
-    {
-      __HAL_TIM_CLEAR_FLAG(&htim7, TIM_FLAG_UPDATE);
-
-      HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
-      LD1_State = HAL_GPIO_ReadPin(LD1_GPIO_Port, LD1_Pin);
-    }
+    #if TASK == 2
+    LED_PWM_WriteDuty(hldrgb.R, duty_cycle);
+    duty_cycle = (duty_cycle < 100.0f) ? (duty_cycle + 10.0f) : 0.0f;
+    HAL_Delay(499);
     #endif
     #if TASK == 3
-    uint8_t RxData_TimerPeriod_us[] = "0000";
-    if(HAL_UART_Receive(&huart3, RxData_TimerPeriod_us, sizeof(RxData_TimerPeriod_us) - 1, HAL_MAX_DELAY) == HAL_OK)
+    uint8_t RxData_DutyCycle[] = "X000";
+    if(HAL_UART_Receive(&huart3, RxData_DutyCycle, sizeof(RxData_DutyCycle) - 1, HAL_MAX_DELAY) == HAL_OK)
     {
-      if(sscanf((char*)RxData_TimerPeriod_us, "%lu", &TimerAutoreloadRegister) == 1)
+      char Channel = '\0';
+      unsigned int DutyCycle = 0;
+      if(sscanf((char*)RxData_DutyCycle, "%c%d", &Channel, &DutyCycle) == 2)
       {
-        if(TimerAutoreloadRegister >= 1000 && TimerAutoreloadRegister <= 9999)
-        {
-          HAL_TIM_Base_Stop_IT(&htim7);
-          __HAL_TIM_SET_COUNTER(&htim7, 0);
-          __HAL_TIM_SET_AUTORELOAD(&htim7, TimerAutoreloadRegister);
-          HAL_TIM_Base_Start_IT(&htim7);
-        }
+        if(Channel == 'R')
+          LED_PWM_WriteDuty(hldrgb.R, DutyCycle);
       }
     }
     #endif
     #if TASK == 4
-    uint8_t RxData_TimerPeriod_us[] = "0000";
-    if(HAL_UART_Receive(&huart3, RxData_TimerPeriod_us, sizeof(RxData_TimerPeriod_us) - 1, HAL_MAX_DELAY) == HAL_OK)
+    uint8_t RxData_DutyCycle[] = "X000";
+    if(HAL_UART_Receive(&huart3, RxData_DutyCycle, sizeof(RxData_DutyCycle) - 1, HAL_MAX_DELAY) == HAL_OK)
     {
-      uint32_t TimerAutoreloadRegister_Tmp = 0;
-      if(sscanf((char*)RxData_TimerPeriod_us, "%lu", &TimerAutoreloadRegister_Tmp) == 1)
+      char Channel = '\0';
+      unsigned int DutyCycle = 0;
+      if(sscanf((char*)RxData_DutyCycle, "%c%d", &Channel, &DutyCycle) == 2)
       {
-        if(TimerAutoreloadRegister_Tmp >= 1000 && TimerAutoreloadRegister_Tmp <= 9999)
+        switch(Channel)
         {
-          TimerAutoreloadRegister = TimerAutoreloadRegister_Tmp;
+          case 'R':
+            LED_PWM_WriteDuty(hldrgb.R, DutyCycle);
+            break;
+          case 'G':
+            LED_PWM_WriteDuty(hldrgb.G, DutyCycle);
+            break;
+          case 'B':
+            LED_PWM_WriteDuty(hldrgb.B, DutyCycle);
+            break;
+          default: break;
         }
       }
     }
     #endif
     #if TASK == 5
-    uint8_t RxData_Phase_deg[] = "000\r";
-    if(HAL_UART_Receive(&huart3, RxData_Phase_deg, sizeof(RxData_Phase_deg) - 1, HAL_MAX_DELAY) == HAL_OK)
-    {
-      uint32_t Phase = 0;
-      if(sscanf((char*)RxData_Phase_deg, "%lu", &Phase) == 1)
-      {
-        if(Phase >= 10 && Phase <= 160)
-        {
-          TimerAutoreloadRegister = 10000.0f*(Phase / 180.0f) - 1;
-        }
-      }
-    }
+    encoder_counter = ENC_GetCounter(&henc1);
+    HAL_Delay(0);
+    #endif
+    #if TASK == 6
+    unsigned char TxData_EncoderCounter[128];
+    int TxData_EncoderCounter_Len = snprintf((char*)TxData_EncoderCounter, sizeof(TxData_EncoderCounter), "Encoder counter: %lu\r\n", ENC_GetCounter(&henc1));
+    HAL_UART_Transmit(&huart3, TxData_EncoderCounter, TxData_EncoderCounter_Len, 100);
+    HAL_Delay(999);
     #endif
     /* USER CODE END WHILE */
 
