@@ -26,3 +26,5 @@ L02_Example/.settings/com.st.stm32cube.ide.mcu.sfrview.prefs
 
 L04_Example/Components/Src/pwm.c
 L04_Example/Components/Src/encoder.c
+L04_Example/Components/Src/encoder.c
+L04_Example/Components/Src/pwm.c
