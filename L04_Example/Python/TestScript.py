@@ -14,8 +14,9 @@ try:
     while True:
         # Format the message with 'R' and the three-digit number with leading zeros
         message = f"R{value:03}B{value:03}"
+        print(f"Sent: {message} ({3.3*value/100.0} V)")
         ser.write(message.encode())  # Send message over serial
-        print(f"Sent: {message}")
+        
         
         # Increment value, wrap around after reaching 100
         value = (value + 10) % 110

@@ -1,0 +1,7 @@
+PB8 (D15 on CN7) -> SCL
+PB9 (D14 on CN7) -> SCA
+
+PA3 (A0 on CN9) -> LED
+
+UART: 9600/8/None/1
+input fomrat: 000 (three digits PWM duty in %)

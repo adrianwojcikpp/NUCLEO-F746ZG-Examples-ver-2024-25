@@ -3,8 +3,8 @@
   ******************************************************************************
   * @file		  : encoder.c
   * @author  	: AW		Adrian.Wojcik@put.poznan.pl
-  * @version 	: 1.3.0
-  * @date    	: Oct 19, 2022
+  * @version 	: 1.3.1
+  * @date     : Nov 08, 2022
   * @brief   	: Simple rotary encoder driver library
   *
   ******************************************************************************
@@ -42,22 +42,22 @@ void ENC_Init(ENC_Handle_TypeDef* henc)
 }
 
 /**
- * @brief Rotary quadrature encoder hardware counter read.
+ * @brief Reads rotary quadrature encoder hardware counter.
  * @param[in] henc : Encoder handler
  * @return Current counter value
  */
-uint32_t ENC_GetCounter(ENC_Handle_TypeDef* henc)
+uint32_t ENC_ReadCounter(ENC_Handle_TypeDef* henc)
 {
   // TODO
   return 0;
 }
 
 /**
- * @brief Rotary quadrature encoder hardware counter read.
+ * @brief Writes to rotary quadrature encoder hardware counter.
  * @param[in] henc    : Encoder handler
  * @param[in] counter : Current counter value
  */
-void ENC_SetCounter(ENC_Handle_TypeDef* henc, uint32_t counter)
+void ENC_WriteCounter(ENC_Handle_TypeDef* henc, uint32_t counter)
 {
   henc->Counter = counter * henc->TicksPerStep;
   __HAL_TIM_SET_COUNTER(henc->Timer, henc->Counter);

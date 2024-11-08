@@ -50,7 +50,7 @@ void DIO_WriteHigh(const DIO_Handle_TypeDef* hdio)
 }
 
 /**
- * @brief Writes gieven state to digital output
+ * @brief Writes given state to digital output
  * @param[in] hdio  : Digital I/O handler
  * @param[in] state : Digital output state (0 or 1)
  * @retval None

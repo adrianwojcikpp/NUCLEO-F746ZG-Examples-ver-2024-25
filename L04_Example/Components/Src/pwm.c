@@ -48,14 +48,6 @@ void PWM_Init(PWM_Handle_TypeDef* hpwm)
 void PWM_WriteDuty(PWM_Handle_TypeDef* hpwm, float duty)
 {
   // TODO
-  // Saturate duty cycle value
-
-  // Write duty to handle field
-
-  // Compute Capture/Compare Register value
-
-  // Write value to register
-
 }
 
 /**

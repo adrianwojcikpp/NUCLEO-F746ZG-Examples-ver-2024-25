@@ -15,7 +15,7 @@
   *
   ******************************************************************************
   */
-#define TASK 1
+#define TASK 6
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -186,12 +186,12 @@ int main(void)
     }
     #endif
     #if TASK == 5
-    encoder_counter = ENC_GetCounter(&henc1);
+    encoder_counter = ENC_ReadCounter(&henc1);
     HAL_Delay(0);
     #endif
     #if TASK == 6
     unsigned char TxData_EncoderCounter[128];
-    int TxData_EncoderCounter_Len = snprintf((char*)TxData_EncoderCounter, sizeof(TxData_EncoderCounter), "Encoder counter: %lu\r\n", ENC_GetCounter(&henc1));
+    int TxData_EncoderCounter_Len = snprintf((char*)TxData_EncoderCounter, sizeof(TxData_EncoderCounter), "Encoder counter: %lu\r\n", ENC_ReadCounter(&henc1));
     HAL_UART_Transmit(&huart3, TxData_EncoderCounter, TxData_EncoderCounter_Len, 100);
     HAL_Delay(999);
     #endif
