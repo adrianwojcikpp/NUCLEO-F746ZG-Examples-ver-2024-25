@@ -64,7 +64,7 @@
 
 /* USER CODE BEGIN PV */
 #if TASK == 3
-float illuminance_lx = 0;
+int illuminance_mlx = 0;
 #endif
 #if TASK == 4
 int illuminance_mlx = 0;
@@ -213,6 +213,7 @@ int main(void)
   BH1750_Init(&hbh1750A);
   #endif
   #if TASK == 7
+  LAMP_WriteFiringAngle(&hlamp1, hlamp1->TriacFiringAngleMax);
   BH1750_Init(&hbh1750B);
   #endif
   /* USER CODE END 2 */
@@ -222,7 +223,7 @@ int main(void)
   while (1)
   {
     #if TASK == 3
-    illuminance_lx = BH1750_ReadIlluminance_lux(&hbh1750A);
+    illuminance_mlx = 1000*BH1750_ReadIlluminance_lux(&hbh1750A);
     HAL_Delay(200);
     #endif
     #if TASK == 4
