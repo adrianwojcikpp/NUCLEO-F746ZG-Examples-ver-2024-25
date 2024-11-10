@@ -213,7 +213,6 @@ int main(void)
   BH1750_Init(&hbh1750A);
   #endif
   #if TASK == 7
-  LAMP_WriteFiringAngle(&hlamp1, hlamp1->TriacFiringAngleMax);
   BH1750_Init(&hbh1750B);
   #endif
   /* USER CODE END 2 */
