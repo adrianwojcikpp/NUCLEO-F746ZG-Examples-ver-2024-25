@@ -15,7 +15,7 @@
   *
   ******************************************************************************
   */
-#define TASK 5
+#define TASK 3
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -36,6 +36,11 @@
 #if TASK == 5
 #include <stdio.h>
 #include "led_config.h"
+#include "bh1750_config.h"
+#endif
+#if TASK == 7
+#include <stdio.h>
+#include "lamp_config.h"
 #include "bh1750_config.h"
 #endif
 /* USER CODE END Includes */
@@ -68,6 +73,10 @@ int illuminance_mlx = 0;
 int duty_cycle;
 int illuminance_mlx = 0;
 #endif
+#if TASK == 7
+int input_value;
+int illuminance_mlx = 0;
+#endif
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -95,12 +104,65 @@ int _read(int file, char *ptr, int len)
   int msg_len = 0;
   while(msg_len <= len)
   {
-    HAL_UART_Receive(&huart3, (uint8_t*)&ptr[msg_len], 1, HAL_MAX_DELAY);
-    msg_len++;
-    if(ptr[msg_len-1] == '\r')
-      break;
+    if(HAL_UART_Receive(&huart3, (uint8_t*)&ptr[msg_len], 1, HAL_MAX_DELAY) == HAL_OK)
+    {
+      msg_len++;
+      if(ptr[msg_len-1] == '\r')
+        break;
+    }
   }
   return msg_len;
+}
+#endif
+#if TASK == 7
+int _write(int file, char *ptr, int len)
+{
+  return (HAL_UART_Transmit(&huart3, (uint8_t*)ptr, len, HAL_MAX_DELAY) == HAL_OK) ? len : -1;
+}
+
+int _read(int file, char *ptr, int len)
+{
+  int msg_len = 0;
+  while(msg_len <= len)
+  {
+    if(HAL_UART_Receive(&huart3, (uint8_t*)&ptr[msg_len], 1, HAL_MAX_DELAY) == HAL_OK)
+    {
+      msg_len++;
+      if(ptr[msg_len-1] == '\r')
+        break;
+    }
+  }
+  return msg_len;
+}
+
+/**
+  * @brief  EXTI line detection callbacks.
+  * @param  GPIO_Pin Specifies the pins connected EXTI line
+  * @retval None
+  */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if(GPIO_Pin == hlamp1.SYNC_Pin)
+  {
+    LAMP_StartFiringAngleTimer(&hlamp1);
+  }
+}
+/**
+  * @brief  Period elapsed callback in non-blocking mode
+  * @param  htim TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  if(htim == hlamp1.FiringAngleTimer)
+  {
+    LAMP_StopFiringAngleTimer(&hlamp1);
+    LAMP_StartPulseTimer(&hlamp1);
+  }
+  if(htim == hlamp1.PulseTimer)
+  {
+    LAMP_StopPulseTimer(&hlamp1);
+  }
 }
 #endif
 /* USER CODE END 0 */
@@ -137,6 +199,8 @@ int main(void)
   MX_USART3_UART_Init();
   MX_I2C1_Init();
   MX_TIM9_Init();
+  MX_TIM7_Init();
+  MX_TIM11_Init();
   /* USER CODE BEGIN 2 */
   #if TASK == 3
 	BH1750_Init(&hbh1750A);
@@ -147,6 +211,9 @@ int main(void)
   #if TASK == 5
   LED_PWM_Init(&hld1);
   BH1750_Init(&hbh1750A);
+  #endif
+  #if TASK == 7
+  BH1750_Init(&hbh1750B);
   #endif
   /* USER CODE END 2 */
 
@@ -174,6 +241,23 @@ int main(void)
     else if(Command == 'W' || Command == 'w') // Write
     {
       LED_PWM_WriteDuty(&hld1, duty_cycle);
+    }
+    #endif
+    #if TASK == 7
+    char Command;
+    scanf("%c%d", &Command, &input_value);
+    if(Command == 'R' || Command == 'r')      // Read
+    {
+      illuminance_mlx = 1000*BH1750_ReadIlluminance_lux(&hbh1750B);
+      printf("{\"id\":2,\"value\":%d.%03d}\r\n", illuminance_mlx / 1000, illuminance_mlx % 1000);
+    }
+    else if(Command == 'W' || Command == 'w') // Write
+    {
+      LAMP_WriteFiringAngle(&hlamp1, input_value);
+    }
+    else if(Command == 'L' || Command == 'L') // Linearize
+    {
+      LAMP_WriteBrightness(&hlamp1, input_value);
     }
     #endif
     /* USER CODE END WHILE */
