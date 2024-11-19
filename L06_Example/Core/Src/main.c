@@ -15,36 +15,33 @@
   *
   ******************************************************************************
   */
-#define TASK 3
+#define TASK 5
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "spi.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#if TASK == 1
-#include "led_config.h"
-#endif
 #if TASK == 2
-#include "led_config.h"
+#include "bmp2_config.h"
 #endif
 #if TASK == 3
 #include <stdio.h>
-#include "led_config.h"
+#include "bmp2_config.h"
 #endif
 #if TASK == 4
 #include <stdio.h>
-#include "led_config.h"
+#include "bmp2_config.h"
 #endif
 #if TASK == 5
-#include "encoder_config.h"
-#endif
-#if TASK == 6
 #include <stdio.h>
-#include "encoder_config.h"
+#include <stdlib.h>
+#include "bmp2_config.h"
+#include "heater_config.h"
 #endif
 /* USER CODE END Includes */
 
@@ -67,10 +64,20 @@
 
 /* USER CODE BEGIN PV */
 #if TASK == 2
-float duty_cycle = 0.0f;
+float temp_degC = 0.0f;
+#endif
+#if TASK == 3
+float temp_degC = 0.0f;
+#endif
+#if TASK == 4
+int temp_mdegC = 0;
+int press_Pa = 0;
 #endif
 #if TASK == 5
-unsigned int encoder_counter = 0;
+int temp_mdegC = 0;
+int press_Pa = 0;
+uint8_t tx_buffer[8];
+const int tx_msg_len = 4;
 #endif
 /* USER CODE END PV */
 
@@ -82,7 +89,54 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+#if TASK == 3
+int _write(int file, char *ptr, int len)
+{
+  return (HAL_UART_Transmit(&huart3, (uint8_t*)ptr, len, HAL_MAX_DELAY) == HAL_OK) ? len : -1;
+}
+#endif
+#if TASK == 4
+int _write(int file, char *ptr, int len)
+{
+  return (HAL_UART_Transmit(&huart3, (uint8_t*)ptr, len, HAL_MAX_DELAY) == HAL_OK) ? len : -1;
+}
+#endif
+#if TASK == 5
+int _write(int file, char *ptr, int len)
+{
+  return (HAL_UART_Transmit(&huart3, (uint8_t*)ptr, len, HAL_MAX_DELAY) == HAL_OK) ? len : -1;
+}
 
+int _read(int file, char *ptr, int len)
+{
+  int msg_len = 0;
+  while(msg_len <= len)
+  {
+    if(HAL_UART_Receive(&huart3, (uint8_t*)&ptr[msg_len], 1, HAL_MAX_DELAY) == HAL_OK)
+    {
+      msg_len++;
+      if(ptr[msg_len-1] == '\r')
+        break;
+    }
+  }
+  return msg_len;
+}
+
+/**
+ * @brief  Rx Transfer completed callback.
+ * @param  huart UART handle.
+ * @retval None
+ */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+ if(huart == &huart3)
+ {
+  HEATER_PWM_WriteDuty(&hheater, atoi((char*)&tx_buffer[1]));
+  HAL_UART_Receive_IT(&huart3, tx_buffer, tx_msg_len);
+ }
+}
+
+#endif
 /* USER CODE END 0 */
 
 /**
@@ -115,27 +169,24 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART3_UART_Init();
-  MX_TIM4_Init();
-  MX_TIM3_Init();
+  MX_SPI4_Init();
+  MX_TIM2_Init();
+  MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
-	#if TASK == 1
-  LED_RGB_PWM_Init(&hldrgb);
-  LED_PWM_WriteDuty(hldrgb.R, 50.0f);
-  #endif
   #if TASK == 2
-  LED_RGB_PWM_Init(&hldrgb);
+  BMP2_Init(&bmp2dev);
   #endif
   #if TASK == 3
-  LED_RGB_PWM_Init(&hldrgb);
+  BMP2_Init(&bmp2dev);
   #endif
   #if TASK == 4
-  LED_RGB_PWM_Init(&hldrgb);
+  BMP2_Init(&bmp2dev);
   #endif
   #if TASK == 5
-  ENC_Init(&henc1);
-  #endif
-  #if TASK == 6
-  ENC_Init(&henc1);
+  BMP2_Init(&bmp2dev);
+  HEATER_PWM_Init(&hheater);
+  HAL_UART_Receive_IT(&huart3, tx_buffer, tx_msg_len);
+  HAL_TIM_Base_Start(&htim7);
   #endif
   /* USER CODE END 2 */
 
@@ -144,56 +195,33 @@ int main(void)
   while (1)
   {
     #if TASK == 2
-    LED_PWM_WriteDuty(hldrgb.R, duty_cycle);
-    duty_cycle = (duty_cycle < 100.0f) ? (duty_cycle + 10.0f) : 0.0f;
-    HAL_Delay(499);
+    temp_degC = BMP2_ReadTemperature_degC(&bmp2dev);
+    HAL_Delay(1000);
     #endif
     #if TASK == 3
-    uint8_t RxData_DutyCycle[] = "X000";
-    if(HAL_UART_Receive(&huart3, RxData_DutyCycle, sizeof(RxData_DutyCycle) - 1, HAL_MAX_DELAY) == HAL_OK)
-    {
-      char Channel = '\0';
-      unsigned int DutyCycle = 0;
-      if(sscanf((char*)RxData_DutyCycle, "%c%d", &Channel, &DutyCycle) == 2)
-      {
-        if(Channel == 'R')
-          LED_PWM_WriteDuty(hldrgb.R, DutyCycle);
-      }
-    }
+    temp_degC = BMP2_ReadTemperature_degC(&bmp2dev);
+    printf("{\"id\":1,\"temp\":%5.2f }\r\n", temp_degC);
+    HAL_Delay(1000);
     #endif
     #if TASK == 4
-    uint8_t RxData_DutyCycle[] = "X000";
-    if(HAL_UART_Receive(&huart3, RxData_DutyCycle, sizeof(RxData_DutyCycle) - 1, HAL_MAX_DELAY) == HAL_OK)
-    {
-      char Channel = '\0';
-      unsigned int DutyCycle = 0;
-      if(sscanf((char*)RxData_DutyCycle, "%c%d", &Channel, &DutyCycle) == 2)
-      {
-        switch(Channel)
-        {
-          case 'R':
-            LED_PWM_WriteDuty(hldrgb.R, DutyCycle);
-            break;
-          case 'G':
-            LED_PWM_WriteDuty(hldrgb.G, DutyCycle);
-            break;
-          case 'B':
-            LED_PWM_WriteDuty(hldrgb.B, DutyCycle);
-            break;
-          default: break;
-        }
-      }
-    }
+    double temp, press;
+    BMP2_ReadData(&bmp2dev, &press, &temp);
+    temp_mdegC = 1000*temp;
+    press_Pa = 100*press;
+    printf("{\"id\":1,\"temp\":%5.2f, \"press\":%7.2f }\r\n", (float)temp, (float)press);
+    HAL_Delay(250);
     #endif
     #if TASK == 5
-    encoder_counter = ENC_ReadCounter(&henc1);
-    HAL_Delay(0);
-    #endif
-    #if TASK == 6
-    unsigned char TxData_EncoderCounter[128];
-    int TxData_EncoderCounter_Len = snprintf((char*)TxData_EncoderCounter, sizeof(TxData_EncoderCounter), "Encoder counter: %lu\r\n", ENC_ReadCounter(&henc1));
-    HAL_UART_Transmit(&huart3, TxData_EncoderCounter, TxData_EncoderCounter_Len, 100);
-    HAL_Delay(999);
+    if(__HAL_TIM_GET_FLAG(&htim7, TIM_FLAG_UPDATE))
+    {
+      __HAL_TIM_CLEAR_FLAG(&htim7, TIM_FLAG_UPDATE);
+
+      double temp, press;
+      BMP2_ReadData(&bmp2dev, &press, &temp);
+      temp_mdegC = 1000*temp;
+      press_Pa = 100*press;
+      printf("{\"id\":1,\"temp\":%5.2f, \"press\":%7.2f }\r\n", (float)temp, (float)press);
+    }
     #endif
     /* USER CODE END WHILE */
 

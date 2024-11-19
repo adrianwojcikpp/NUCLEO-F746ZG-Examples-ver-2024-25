@@ -1,0 +1,6 @@
+PE2 (CN9) -> SCL (SCK)
+PE4 (CN9) -> CB0 (CS)
+PE5 (CN9) -> SDO (MISO)
+PE6 (CN9) -> SDA (MOSI)
+
+UART: 9600/8/None/2

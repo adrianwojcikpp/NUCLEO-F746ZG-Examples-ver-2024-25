@@ -41,7 +41,7 @@ init_plot()
 
 try:
     value = 0
-    for value in range(0,100):
+    for value in range(1,100):
         # Send "W" message
         message = f"L{value:03}\r"
         ser.write(message.encode())
