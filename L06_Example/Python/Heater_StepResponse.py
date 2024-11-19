@@ -20,7 +20,7 @@ def init_timeline_plot():
     """Initialize the timeline plot."""
     plt.ion()  # Turn on interactive mode
     plt.figure(figsize=(12, 6))
-    plt.xlabel("Timestamp")
+    plt.xlabel("Timestamp [ms]")
     plt.ylabel("Temperature [degC]")
     plt.title("Electric heater step response")
     plt.grid()
