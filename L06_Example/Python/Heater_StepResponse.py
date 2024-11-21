@@ -39,7 +39,7 @@ def update_timeline_plot(timestamp, value):
 init_timeline_plot()
 
 # Send the initial message
-initial_message = "W090\r"
+initial_message = "W100\r"
 ser.write(initial_message.encode())
 print(f"Sent: {initial_message}")
 
