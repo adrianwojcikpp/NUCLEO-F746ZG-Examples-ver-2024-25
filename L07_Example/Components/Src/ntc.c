@@ -1,16 +1,17 @@
 /**
   ******************************************************************************
-  * @file     : aio.c
+  * @file     : ntc.c
   * @author   : AW    Adrian.Wojcik@put.poznan.pl
   * @version  : 1.0.0
-  * @date     : Nov 21, 2024
-  * @brief    : Analog inputs/outputs components.
+  * @date     : Nov 22, 2024
+  * @brief    : NTC thermistor components driver
   *
   ******************************************************************************
   */
 
-/* Public includes -----------------------------------------------------------*/
-#include "aio.h"
+/* Private includes ----------------------------------------------------------*/
+#include <math.h>
+#include "ntc.h"
 
 /* Private typedef -----------------------------------------------------------*/
 
@@ -29,25 +30,23 @@
 /* Private functions ---------------------------------------------------------*/
 
 /* Public functions ----------------------------------------------------------*/
-
 /**
- * @brief TODO
+ * TODO
  */
-float VOLTAGE_DIVIDER_Read_R_DOWM(VOLTAGE_DIVIDER_Handle_TypeDef* hvd, float voltage)
+float NTC_SteinhartHart_ReadTemperature_degC(NTC_SteinhartHart_Handle_TypeDef* hntc, unsigned int voltage)
 {
-  if(voltage == 0.0f)
-    hvd->R_down = 0;
-  else
-    hvd->R_down = (hvd->R_up)/(hvd->Gain * hvd->PowerSupplyVoltage / voltage - 1.0f);
-  return hvd->R_down;
+  hntc->R = VOLTAGE_DIVIDER_Read_R_DOWM(hntc->VoltageDivider, voltage) - hntc->Roffset;
+  float lnR = logf(hntc->R);
+  float T = (1.0f / (hntc->A + hntc->B*lnR + hntc->C*lnR*lnR*lnR)) - 273.15;
+  return T;
 }
 
 /**
- * @brief TODO
+ * TODO
  */
-float VOLTAGE_DIVIDER_Read_R_UP(VOLTAGE_DIVIDER_Handle_TypeDef* hvd, float voltage)
+float NTC_Beta_ReadTemperature_degC(NTC_Beta_Handle_TypeDef* hntc, unsigned int voltage)
 {
-  hvd->R_up = (hvd->R_down)*(hvd->Gain * hvd->PowerSupplyVoltage / voltage - 1.0f);
-  return hvd->R_up;
+  hntc->R = VOLTAGE_DIVIDER_Read_R_DOWM(hntc->VoltageDivider, voltage) - hntc->Roffset;;
+  float T = (1.0f / ((1.0f/298.15)+(1/hntc->beta)*logf(hntc->R/hntc->R25degC))) - 273.15;
+  return T;
 }
-

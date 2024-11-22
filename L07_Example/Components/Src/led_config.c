@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file	  : led_config.c
+  * @file	    : led_config.c
   * @author   : AW		Adrian.Wojcik@put.poznan.pl
   * @version  : 1.4.0
   * @date     : Oct 30, 2024

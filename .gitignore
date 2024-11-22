@@ -19,3 +19,5 @@ L04_Example/Components/Src/encoder.c
 L04_Example/Components/Src/pwm.c
 L04_Example/Components/Src/encoder.c
 L04_Example/Components/Src/pwm.c
+L04_Example/Components/Src/pwm.c
+L04_Example/Components/Src/encoder.c

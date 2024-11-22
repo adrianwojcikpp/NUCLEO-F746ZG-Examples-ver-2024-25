@@ -1,16 +1,16 @@
 /**
   ******************************************************************************
-  * @file     : aio.c
+  * @file     : ldr_config.c
   * @author   : AW    Adrian.Wojcik@put.poznan.pl
   * @version  : 1.0.0
-  * @date     : Nov 21, 2024
-  * @brief    : Analog inputs/outputs components.
+  * @date     : Nov 22, 2024
+  * @brief    : LDR / photoresistor configuration file
   *
   ******************************************************************************
   */
 
-/* Public includes -----------------------------------------------------------*/
-#include "aio.h"
+/* Private includes ----------------------------------------------------------*/
+#include "ldr.h"
 
 /* Private typedef -----------------------------------------------------------*/
 
@@ -19,8 +19,18 @@
 /* Private macro -------------------------------------------------------------*/
 
 /* Private variables ---------------------------------------------------------*/
+VOLTAGE_DIVIDER_Handle_TypeDef hvd_ldr1 = {
+    .R_up = 10000.0f, .Gain = 1.0f, .PowerSupplyVoltage = 3300.0f
+};
 
 /* Public variables ----------------------------------------------------------*/
+LDR_Gamma_Handle_TypeDef hldr1_gamma = {
+    .VoltageDivider = &hvd_ldr1,
+    .Roffset = 0,
+    .R10lx = 10000,
+    .gamma = 0.6
+};
+
 
 /* Private function prototypes -----------------------------------------------*/
 
@@ -29,25 +39,3 @@
 /* Private functions ---------------------------------------------------------*/
 
 /* Public functions ----------------------------------------------------------*/
-
-/**
- * @brief TODO
- */
-float VOLTAGE_DIVIDER_Read_R_DOWM(VOLTAGE_DIVIDER_Handle_TypeDef* hvd, float voltage)
-{
-  if(voltage == 0.0f)
-    hvd->R_down = 0;
-  else
-    hvd->R_down = (hvd->R_up)/(hvd->Gain * hvd->PowerSupplyVoltage / voltage - 1.0f);
-  return hvd->R_down;
-}
-
-/**
- * @brief TODO
- */
-float VOLTAGE_DIVIDER_Read_R_UP(VOLTAGE_DIVIDER_Handle_TypeDef* hvd, float voltage)
-{
-  hvd->R_up = (hvd->R_down)*(hvd->Gain * hvd->PowerSupplyVoltage / voltage - 1.0f);
-  return hvd->R_up;
-}
-

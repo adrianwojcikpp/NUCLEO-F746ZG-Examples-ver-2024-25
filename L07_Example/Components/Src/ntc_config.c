@@ -1,16 +1,16 @@
 /**
   ******************************************************************************
-  * @file     : aio.c
+  * @file     : ntc_config.c
   * @author   : AW    Adrian.Wojcik@put.poznan.pl
   * @version  : 1.0.0
-  * @date     : Nov 21, 2024
-  * @brief    : Analog inputs/outputs components.
+  * @date     : Nov 22, 2024
+  * @brief    : NTC thermistor configuration file
   *
   ******************************************************************************
   */
 
-/* Public includes -----------------------------------------------------------*/
-#include "aio.h"
+/* Private includes ----------------------------------------------------------*/
+#include "ntc.h"
 
 /* Private typedef -----------------------------------------------------------*/
 
@@ -19,8 +19,25 @@
 /* Private macro -------------------------------------------------------------*/
 
 /* Private variables ---------------------------------------------------------*/
+VOLTAGE_DIVIDER_Handle_TypeDef hvd_ntc1 = {
+    .R_up = 50000.0f, .Gain = 1.0f, .PowerSupplyVoltage = 3300.0f
+};
 
 /* Public variables ----------------------------------------------------------*/
+NTC_SteinhartHart_Handle_TypeDef hntc1_sh = {
+    .VoltageDivider = &hvd_ntc1,
+    .Roffset = 150,
+    .A = 0.001129148,
+    .B = 0.000234125,
+    .C = 0.0000000876741
+};
+
+NTC_Beta_Handle_TypeDef hntc1_beta = {
+    .VoltageDivider = &hvd_ntc1,
+    .Roffset = 150,
+    .R25degC = 10000, /* 7000 */
+    .beta = 4200
+};
 
 /* Private function prototypes -----------------------------------------------*/
 
@@ -29,25 +46,3 @@
 /* Private functions ---------------------------------------------------------*/
 
 /* Public functions ----------------------------------------------------------*/
-
-/**
- * @brief TODO
- */
-float VOLTAGE_DIVIDER_Read_R_DOWM(VOLTAGE_DIVIDER_Handle_TypeDef* hvd, float voltage)
-{
-  if(voltage == 0.0f)
-    hvd->R_down = 0;
-  else
-    hvd->R_down = (hvd->R_up)/(hvd->Gain * hvd->PowerSupplyVoltage / voltage - 1.0f);
-  return hvd->R_down;
-}
-
-/**
- * @brief TODO
- */
-float VOLTAGE_DIVIDER_Read_R_UP(VOLTAGE_DIVIDER_Handle_TypeDef* hvd, float voltage)
-{
-  hvd->R_up = (hvd->R_down)*(hvd->Gain * hvd->PowerSupplyVoltage / voltage - 1.0f);
-  return hvd->R_up;
-}
-

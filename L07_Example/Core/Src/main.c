@@ -47,7 +47,8 @@
 #include "aio.h"
 #endif
 #if TASK == 5
-#include "aio.h"
+#include "ntc_config.h"
+#include "ldr_config.h"
 #endif
 /* USER CODE END Includes */
 
@@ -89,9 +90,13 @@ unsigned int pot1_mV, pot2_mV;
 uint16_t adc1_conv_buffer[ADC1_NUMBER_OF_CONV];
 #endif
 #if TASK == 5
-unsigned int pot1_mV;
-VOLTAGE_DIVIDER_Handle_TypeDef hvd1 = { .R_up = 10000.0f, .Gain = 1.0f, .PowerSupplyVoltage = 3300.0f };
-float pot1_Ohm;
+unsigned int sen1_mV;
+
+float sen1_temp_sh;
+float sen1_temp_beta;
+
+float sen1_light_gamma;
+
 #endif
 /* USER CODE END PV */
 
@@ -162,7 +167,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+    HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -240,10 +245,16 @@ int main(void)
     HAL_ADC_Start(&hadc1);
     if(HAL_ADC_PollForConversion(&hadc1, ADC1_TIMEOUT) == HAL_OK)
     {
-      pot1_mV = ADC_REG2VOLTAGE(HAL_ADC_GetValue(&hadc1));
-      pot1_Ohm = VOLTAGE_DIVIDER_Read_R_DOWM(&hvd1, pot1_mV);
-      // TODO: add resistance -> temperature & resistance -> light intensity routines
+      sen1_mV = ADC_REG2VOLTAGE(HAL_ADC_GetValue(&hadc1));
+
+      // If NTC
+      sen1_temp_sh = NTC_SteinhartHart_ReadTemperature_degC(&hntc1_sh, sen1_mV);
+      sen1_temp_beta = NTC_Beta_ReadTemperature_degC(&hntc1_beta, sen1_mV);
+
+      // If LDR
+      sen1_light_gamma = LDR_Gamma_ReadIlluminance_lx(&hldr1_gamma, sen1_mV);
     }
+
     HAL_Delay(10);
     #endif
     /* USER CODE END WHILE */

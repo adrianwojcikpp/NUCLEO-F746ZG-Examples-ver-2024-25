@@ -1,16 +1,17 @@
 /**
   ******************************************************************************
-  * @file     : aio.c
+  * @file     : ldr.c
   * @author   : AW    Adrian.Wojcik@put.poznan.pl
   * @version  : 1.0.0
-  * @date     : Nov 21, 2024
-  * @brief    : Analog inputs/outputs components.
+  * @date     : Nov 22, 2024
+  * @brief    : LDR / photoresistor components driver
   *
   ******************************************************************************
   */
 
-/* Public includes -----------------------------------------------------------*/
-#include "aio.h"
+/* Private includes ----------------------------------------------------------*/
+#include <math.h>
+#include "ldr.h"
 
 /* Private typedef -----------------------------------------------------------*/
 
@@ -29,25 +30,12 @@
 /* Private functions ---------------------------------------------------------*/
 
 /* Public functions ----------------------------------------------------------*/
-
 /**
- * @brief TODO
+ * TODO
  */
-float VOLTAGE_DIVIDER_Read_R_DOWM(VOLTAGE_DIVIDER_Handle_TypeDef* hvd, float voltage)
+float LDR_Gamma_ReadIlluminance_lx(LDR_Gamma_Handle_TypeDef* hldr, unsigned int voltage)
 {
-  if(voltage == 0.0f)
-    hvd->R_down = 0;
-  else
-    hvd->R_down = (hvd->R_up)/(hvd->Gain * hvd->PowerSupplyVoltage / voltage - 1.0f);
-  return hvd->R_down;
+  hldr->R = VOLTAGE_DIVIDER_Read_R_DOWM(hldr->VoltageDivider, voltage) - hldr->Roffset;
+  float I = 10*powf(hldr->R10lx, 1.0f/hldr->gamma)/powf(hldr->R, 1.0f/hldr->gamma);
+  return I;
 }
-
-/**
- * @brief TODO
- */
-float VOLTAGE_DIVIDER_Read_R_UP(VOLTAGE_DIVIDER_Handle_TypeDef* hvd, float voltage)
-{
-  hvd->R_up = (hvd->R_down)*(hvd->Gain * hvd->PowerSupplyVoltage / voltage - 1.0f);
-  return hvd->R_up;
-}
-

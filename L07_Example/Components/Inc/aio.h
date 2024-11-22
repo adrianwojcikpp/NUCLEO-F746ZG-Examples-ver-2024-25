@@ -59,4 +59,9 @@ typedef struct {
  */
 float VOLTAGE_DIVIDER_Read_R_DOWM(VOLTAGE_DIVIDER_Handle_TypeDef* hvd, float voltage);
 
+/**
+ * @brief TODO
+ */
+float VOLTAGE_DIVIDER_Read_R_UP(VOLTAGE_DIVIDER_Handle_TypeDef* hvd, float voltage);
+
 #endif /* INC_AIO_H_ */
