@@ -107,21 +107,6 @@ int _write(int file, char *ptr, int len)
   return (HAL_UART_Transmit(&huart3, (uint8_t*)ptr, len, HAL_MAX_DELAY) == HAL_OK) ? len : -1;
 }
 
-int _read(int file, char *ptr, int len)
-{
-  int msg_len = 0;
-  while(msg_len <= len)
-  {
-    if(HAL_UART_Receive(&huart3, (uint8_t*)&ptr[msg_len], 1, HAL_MAX_DELAY) == HAL_OK)
-    {
-      msg_len++;
-      if(ptr[msg_len-1] == '\r')
-        break;
-    }
-  }
-  return msg_len;
-}
-
 /**
  * @brief  Rx Transfer completed callback.
  * @param  huart UART handle.
