@@ -15,7 +15,7 @@
   *
   ******************************************************************************
   */
-#define TASK 5
+#define TASK 2
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -25,7 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#if TASK == 2
+#if TASK == 1
 #include "aio.h"
 #endif
 #if TASK == 2
@@ -167,7 +167,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-    HAL_Init();
+  HAL_Init();
 
   /* USER CODE BEGIN Init */
 
