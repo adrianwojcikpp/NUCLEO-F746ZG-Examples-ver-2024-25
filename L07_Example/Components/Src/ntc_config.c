@@ -35,7 +35,7 @@ NTC_SteinhartHart_Handle_TypeDef hntc1_sh = {
 NTC_Beta_Handle_TypeDef hntc1_beta = {
     .VoltageDivider = &hvd_ntc1,
     .Roffset = 150,
-    .R25degC = 10000, /* 7000 */
+    .R25degC = 8500, /* 7000 */
     .beta = 4200
 };
 

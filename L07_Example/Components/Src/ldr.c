@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file     : ldr.c
   * @author   : AW    Adrian.Wojcik@put.poznan.pl
-  * @version  : 1.0.0
-  * @date     : Nov 22, 2024
+  * @version  : 1.0.5
+  * @date     : Dec 2, 2024
   * @brief    : LDR / photoresistor components driver
   *
   ******************************************************************************
@@ -31,7 +31,10 @@
 
 /* Public functions ----------------------------------------------------------*/
 /**
- * TODO
+ * @brief Computes illuminance from voltage drop on LDR using Gamma parameter.
+ * @param[in/out] hvd : LDR (Gamma parameter) handle
+ * @param[in] voltage : Output voltage of voltage divider in millivolts
+ * @return Illuminance in luxes 
  */
 float LDR_Gamma_ReadIlluminance_lx(LDR_Gamma_Handle_TypeDef* hldr, unsigned int voltage)
 {

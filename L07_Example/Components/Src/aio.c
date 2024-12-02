@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file     : aio.c
   * @author   : AW    Adrian.Wojcik@put.poznan.pl
-  * @version  : 1.0.0
-  * @date     : Nov 21, 2024
+  * @version  : 1.3.5
+  * @date     : Dec 2, 2024
   * @brief    : Analog inputs/outputs components.
   *
   ******************************************************************************
@@ -31,7 +31,10 @@
 /* Public functions ----------------------------------------------------------*/
 
 /**
- * @brief TODO
+ * @brief Computes pull-down resistance of given voltage divider from output voltage
+ * @param[in/out] hvd : Voltage divider handle
+ * @param[in] voltage : Output voltage of voltage divider in millivolts
+ * @return Pull-down resistance in ohms. 
  */
 float VOLTAGE_DIVIDER_Read_R_DOWM(VOLTAGE_DIVIDER_Handle_TypeDef* hvd, float voltage)
 {
@@ -43,7 +46,10 @@ float VOLTAGE_DIVIDER_Read_R_DOWM(VOLTAGE_DIVIDER_Handle_TypeDef* hvd, float vol
 }
 
 /**
- * @brief TODO
+ * @brief Computes pull-up resistance of given voltage divider from output voltage
+ * @param[in/out] hvd : Voltage divider handle
+ * @param[in] voltage : Output voltage of voltage divider in millivolts
+ * @return Pull-up resistance in ohms. 
  */
 float VOLTAGE_DIVIDER_Read_R_UP(VOLTAGE_DIVIDER_Handle_TypeDef* hvd, float voltage)
 {

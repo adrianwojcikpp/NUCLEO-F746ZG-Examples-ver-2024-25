@@ -15,7 +15,7 @@
   *
   ******************************************************************************
   */
-#define TASK 2
+#define TASK 5
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
@@ -254,7 +254,6 @@ int main(void)
       // If LDR
       sen1_light_gamma = LDR_Gamma_ReadIlluminance_lx(&hldr1_gamma, sen1_mV);
     }
-
     HAL_Delay(10);
     #endif
     /* USER CODE END WHILE */
