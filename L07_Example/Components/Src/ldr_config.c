@@ -20,14 +20,14 @@
 
 /* Private variables ---------------------------------------------------------*/
 VOLTAGE_DIVIDER_Handle_TypeDef hvd_ldr1 = {
-    .R_up = 5000.0f, .Gain = 1.0f, .PowerSupplyVoltage = 3300.0f
+    .R_up = 10000.0f, .Gain = 1.0f, .PowerSupplyVoltage = 3300.0f
 };
 
 /* Public variables ----------------------------------------------------------*/
 LDR_Gamma_Handle_TypeDef hldr1_gamma = {
     .VoltageDivider = &hvd_ldr1,
     .Roffset = 0,
-    .R10lx = 5000,
+    .R10lx = 8000,
     .gamma = 0.6
 };
 

@@ -26,10 +26,14 @@ typedef struct {
 /* Public define -------------------------------------------------------------*/
 #define ADC_BIT_RES      12      // [bits]
 #define ADC_REG_MAX      (float)((1ul << ADC_BIT_RES) - 1)
-#define ADC_VOLTAGE_MAX  3.3f    // [V]
+#define ADC_VOLTAGE_MAX  3300.0f // [mV]
 
-#define ADC1_NUMBER_OF_CONV  2
+#define ADC1_NUMBER_OF_CONV  0
 #define ADC1_TIMEOUT         1 // [ms]
+
+#define DAC_BIT_RES      12      // [bits]
+#define DAC_REG_MAX      (float)((1ul << DAC_BIT_RES) - 1)
+#define DAC_VOLTAGE_MAX  3300.0f // [mV]
 
 /* Public macro --------------------------------------------------------------*/
 
@@ -38,17 +42,17 @@ typedef struct {
  * @param[in] reg : Data register
  * @return Input voltage in millivolts
  */
-#define ADC_REG2VOLTAGE(reg) (1000.0f*__LINEAR_TRANSFORM((float)reg,         \
-                                                       0.0f, ADC_REG_MAX,    \
-                                                       0.0f, ADC_VOLTAGE_MAX))
+#define ADC_REG2VOLTAGE(reg) (__LINEAR_TRANSFORM((float)reg,         \
+                                               0.0f, ADC_REG_MAX,    \
+                                               0.0f, ADC_VOLTAGE_MAX))
 
 /**
  * @brief ADC voltage in volts to data register.
  * @param[in] vol : Output voltage in millivolts
  * @return Data register
  */
-#define ADC_VOLTAGE2REG(vol) (uint16_t)(__LINEAR_TRANSFORM(vol/1000.0f, \
-                                               0.0, ADC_VOLTAGE_MAX,    \
+#define ADC_VOLTAGE2REG(vol) (uint16_t)(__LINEAR_TRANSFORM(vol,      \
+                                               0.0, ADC_VOLTAGE_MAX, \
                                                0.0, ADC_REG_MAX      ))
 
 /**

@@ -15,11 +15,13 @@
   *
   ******************************************************************************
   */
-#define TASK 1
+#define TASK 6
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "dac.h"
+#include "dma.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -28,11 +30,36 @@
 #if TASK == 1
 #include "aio.h"
 #endif
+#if TASK == 2
+#define _USE_MATH_DEFINES
+#include <math.h>
+#include "aio.h"
+#endif
+#if TASK == 3
+#include <stdio.h>
+#define _USE_MATH_DEFINES
+#include <math.h>
+#include "aio.h"
+#endif
+#if TASK == 5
+#include "sine_wave_buffer.h"
+#endif
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+#if TASK == 2 || TASK == 3
+/**
+ * @brief  Harmonic signal parameters
+ */
+typedef struct {
+  float Amplitude;  /* mV  */
+  float Phase;      /* rad */
+  float Mean;       /* Hz  */
+  float Frequency;  /* mV  */
+  float SampleTime; /* s   */
+} SINE_WAVE_Handle_TypeDef;
+#endif
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -48,25 +75,110 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+#if TASK == 1
+float v_out = 1000.0f;
+#endif
+#if TASK == 2
+const SINE_WAVE_Handle_TypeDef hsine = {
+    .Amplitude = 1000,  /* mV  */
+    .Phase = 0*M_PI,    /* rad */
+    .Frequency = 10,    /* Hz  */
+    .Mean = 1000,       /* mV  */
+    .SampleTime = 0.001 /* s   */
+};
+unsigned long int time = 0; /* ms */
+float v_out = 0.0f;         /* mV */
+#endif
+#if TASK == 3
+SINE_WAVE_Handle_TypeDef hsine = {
+    .Amplitude = 1000,  /* mV  */
+    .Phase = 0*M_PI,    /* rad */
+    .Frequency = 10,    /* Hz  */
+    .Mean = 1000,       /* mV  */
+    .SampleTime = 0.001 /* s   */
+};
+unsigned long int time = 0; /* ms */
+float v_out = 0.0f;         /* mV */
+uint8_t rx_data[] = "A0000";
+#endif
+#if TASK == 6
+//extern unsigned char rawData[39915];
+extern unsigned char rawData[79830];
+#endif
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-#if TASK == 1
-/*
- * @brief Analog output control function.
- * @param[in] voltage : Output voltage in millivolts
- * @return None
+#if TASK == 1 || TASK == 2 || TASK == 3
+/**
+ * @brief Writes to DAC data holding register (Channel #1, 12 bits, right alignment).
+ * @param[in] voltage : Voltage expressed in millivolts, in range <0 - 3300> mV
+ * @retval None
  */
 void DAC_SetVoltage(float voltage);
+#endif
+#if TASK == 2 || TASK == 3
+/**
+ * @brief Computes value of given sine wave at given discrete time.
+ * @param[in] sine_wave     : Structure with sine wave parameters.
+ * @param[in] discrete_time : Discrete time (sample number).
+ * @retval Sine wave value at discrete time.
+ */
+float SINE_WAVE_GetValue(const SINE_WAVE_Handle_TypeDef* sine_wave, unsigned int discrete_time);
 #endif
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+#if TASK == 3
+/**
+  * @brief  Rx Transfer completed callback.
+  * @param  huart UART handle.
+  * @retval None
+  */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  if(huart == &huart3)
+  {
+    char param = '\0';
+    int value;
+    if(sscanf((char*)rx_data, "%c%d", &param, &value) == 2)
+    {
+      switch(param)
+      {
+      case 'A':
+      case 'a':
+        hsine.Amplitude = __SATURATION(value, 0, DAC_VOLTAGE_MAX/2);
+        break;
+      case 'm':
+      case 'M':
+        hsine.Mean = __SATURATION(value, 0, DAC_VOLTAGE_MAX);
+        break;
+      case 'f':
+      case 'F':
+        hsine.Frequency = __SATURATION(value, 1, 100);
+        break;
+      default:
+        break;
+      }
+    }
+    HAL_UART_Receive_IT(&huart3, rx_data, sizeof(rx_data) - 1);
+  }
+}
+#endif
 
+/**
+  * @brief  Conversion complete callback in non-blocking mode for Channel1
+  * @param  hdac pointer to a DAC_HandleTypeDef structure that contains
+  *         the configuration information for the specified DAC.
+  * @retval None
+  */
+void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef *hdac)
+{
+  HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_1);
+  HAL_TIM_Base_Stop(&htim7);
+}
 /* USER CODE END 0 */
 
 /**
@@ -98,18 +210,47 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_USART3_UART_Init();
   MX_DAC_Init();
+  MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 	#if TASK == 1
-	DAC_SetVoltage(1000.0f);
+  HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
+	DAC_SetVoltage(v_out);
 	#endif
+  #if TASK == 2
+  HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
+  HAL_TIM_Base_Start(&htim7);
+  #endif
+  #if TASK == 3
+  HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
+  HAL_TIM_Base_Start(&htim7);
+  HAL_UART_Receive_IT(&huart3, rx_data, sizeof(rx_data) - 1);
+  #endif
+  #if TASK == 5
+  HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t*)sine_wave_buffer, SINE_WAVE_SIZE, DAC_ALIGN_12B_R);
+  HAL_TIM_Base_Start(&htim7);
+  #endif
+  #if TASK == 6
+  HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t*)rawData, sizeof(rawData)/2, DAC_ALIGN_12B_L);
+  HAL_TIM_Base_Start(&htim7);
+  #endif
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    #if TASK == 2 || TASK == 3
+    if(__HAL_TIM_GET_FLAG(&htim7, TIM_FLAG_UPDATE))
+    {
+      __HAL_TIM_CLEAR_FLAG(&htim7, TIM_FLAG_UPDATE);
+      v_out = SINE_WAVE_GetValue(&hsine, time);
+      DAC_SetVoltage(v_out);
+      time++;
+    }
+    #endif
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -174,15 +315,32 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-#if TASK == 1
-/*
- * @brief Analog output control function.
- * @param[in] voltage : Output voltage in millivolts
- * @return None
+#if TASK == 1 || TASK == 2 || TASK == 3
+/**
+ * @brief Writes to DAC data holding register (Channel #1, 12 bits, right alignment).
+ * @param[in] voltage : Voltage expressed in millivolts, in range <0 - 3300> mV
+ * @retval None
  */
 void DAC_SetVoltage(float voltage)
 {
 	// TODO
+  float voltage_sat_mV = DAC_VOLTAGE_SAT(voltage);
+  uint16_t dac_reg = DAC_VOLTAGE2REG(voltage_sat_mV);
+  HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, dac_reg);
+}
+#endif
+#if TASK == 2 || TASK == 3
+/**
+ * @brief Computes value of given sine wave at given discrete time.
+ * @param[in] sine_wave     : Structure with sine wave parameters.
+ * @param[in] discrete_time : Discrete time (sample number).
+ * @retval Sine wave value at discrete time.
+ */
+float SINE_WAVE_GetValue(const SINE_WAVE_Handle_TypeDef* sine_wave, unsigned int discrete_time)
+{
+  float time = sine_wave->SampleTime*discrete_time;
+  float value = (sine_wave->Amplitude)*sinf(2.0f*M_PI*sine_wave->Frequency*time + sine_wave->Phase) + sine_wave->Mean;
+  return value;
 }
 #endif
 /* USER CODE END 4 */
