@@ -15,12 +15,11 @@
   *
   ******************************************************************************
   */
-#define TASK 6
+#define TASK 3
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "dac.h"
-#include "dma.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -168,6 +167,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 }
 #endif
 
+#if TASK == 6
 /**
   * @brief  Conversion complete callback in non-blocking mode for Channel1
   * @param  hdac pointer to a DAC_HandleTypeDef structure that contains
@@ -179,6 +179,7 @@ void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef *hdac)
   HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_1);
   HAL_TIM_Base_Stop(&htim7);
 }
+#endif
 /* USER CODE END 0 */
 
 /**
@@ -210,7 +211,6 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_DMA_Init();
   MX_USART3_UART_Init();
   MX_DAC_Init();
   MX_TIM7_Init();
