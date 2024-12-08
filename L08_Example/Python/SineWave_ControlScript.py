@@ -3,7 +3,7 @@ import serial
 
 # Set up the serial connection
 try:
-    ser = serial.Serial('COM1', baudrate=115200, timeout=1)
+    ser = serial.Serial('COM8', baudrate=115200, timeout=1)
 except Exception as e:
     print(f"Could not open serial port: {e}")
     ser = None

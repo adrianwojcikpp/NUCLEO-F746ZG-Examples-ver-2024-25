@@ -6,20 +6,20 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2024 STMicroelectronics.
-  * All rights reserved.
+  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
+  * All rights reserved.</center></h2>
   *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
+  * This software component is licensed by ST under BSD 3-Clause license,
+  * the "License"; You may not use this file except in compliance with the
+  * License. You may obtain a copy of the License at:
+  *                        opensource.org/licenses/BSD-3-Clause
   *
   ******************************************************************************
   */
-#define TASK 5
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "dac.h"
+#include "adc.h"
 #include "dma.h"
 #include "tim.h"
 #include "usart.h"
@@ -27,44 +27,26 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#if TASK == 1
-#include "aio.h"
-#endif
-#if TASK == 2
-#define _USE_MATH_DEFINES
-#include <math.h>
-#include "aio.h"
-#endif
-#if TASK == 3
 #include <stdio.h>
-#define _USE_MATH_DEFINES
-#include <math.h>
+#include <string.h>
+#include "pid_controller_config.h"
+#include "led_config.h"
 #include "aio.h"
-#endif
-#if TASK == 5
-#include "sine_wave_buffer.h"
-#endif
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-#if TASK == 2 || TASK == 3
-/**
- * @brief  Harmonic signal parameters
- */
 typedef struct {
-  float Amplitude;  /* mV  */
-  float Phase;      /* rad */
-  float Mean;       /* Hz  */
-  float Frequency;  /* mV  */
-  float SampleTime; /* s   */
-} SINE_WAVE_Handle_TypeDef;
-#endif
+  float measurement;
+  float reference;
+  float control;
+} SWV_TypeDef;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define CLOSED_LOOP
+#define CNT_MAX 900
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -75,63 +57,32 @@ typedef struct {
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-#if TASK == 1
-float v_out = 1000.0f;
-#endif
-#if TASK == 2
-const SINE_WAVE_Handle_TypeDef hsine = {
-    .Amplitude = 1000,  /* mV  */
-    .Phase = 0*M_PI,    /* rad */
-    .Frequency = 10,    /* Hz  */
-    .Mean = 1000,       /* mV  */
-    .SampleTime = 0.001 /* s   */
-};
-unsigned long int time = 0; /* ms */
-float v_out = 0.0f;         /* mV */
-#endif
-#if TASK == 3
-SINE_WAVE_Handle_TypeDef hsine = {
-    .Amplitude = 1000,  /* mV  */
-    .Phase = 0*M_PI,    /* rad */
-    .Frequency = 10,    /* Hz  */
-    .Mean = 1000,       /* mV  */
-    .SampleTime = 0.001 /* s   */
-};
-unsigned long int time = 0; /* ms */
-float v_out = 0.0f;         /* mV */
-uint8_t rx_data[] = "A0000";
-#endif
-#if TASK == 6
-//extern unsigned char rawData[39915];
-extern unsigned char rawData[79830];
+uint8_t rx_buffer[32];
+uint16_t msg_len;
+
+float duty = 50.0f;              // [%]
+float current = 0.0f;            // [mA]
+float current_ref = 0.0f;        // [mA]
+const float resistance = 100.0f; // [Ohm]
+uint32_t cnt = 0;
+SWV_TypeDef swv;
+
+#ifdef CNT_MAX
+const uint32_t cnt_dec = 10;
+uint8_t txBuffer[2][CNT_MAX * sizeof(swv)];
+_Bool txActiveBuffer = 0;
+_Bool txFlag = 0;
 #endif
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-#if TASK == 1 || TASK == 2 || TASK == 3
-/**
- * @brief Writes to DAC data holding register (Channel #1, 12 bits, right alignment).
- * @param[in] voltage : Voltage expressed in millivolts, in range <0 - 3300> mV
- * @retval None
- */
-void DAC_SetVoltage(float voltage);
-#endif
-#if TASK == 2 || TASK == 3
-/**
- * @brief Computes value of given sine wave at given discrete time.
- * @param[in] sine_wave     : Structure with sine wave parameters.
- * @param[in] discrete_time : Discrete time (sample number).
- * @retval Sine wave value at discrete time.
- */
-float SINE_WAVE_GetValue(const SINE_WAVE_Handle_TypeDef* sine_wave, unsigned int discrete_time);
-#endif
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-#if TASK == 3
 /**
   * @brief  Rx Transfer completed callback.
   * @param  huart UART handle.
@@ -141,46 +92,88 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   if(huart == &huart3)
   {
-    char param = '\0';
-    int value;
-    if(sscanf((char*)rx_data, "%c%d", &param, &value) == 2)
+    if(rx_buffer[0] == 'R')
     {
-      switch(param)
-      {
-      case 'A':
-      case 'a':
-        hsine.Amplitude = __SATURATION(value, 0, DAC_VOLTAGE_MAX/2);
-        break;
-      case 'm':
-      case 'M':
-        hsine.Mean = __SATURATION(value, 0, DAC_VOLTAGE_MAX);
-        break;
-      case 'f':
-      case 'F':
-        hsine.Frequency = __SATURATION(value, 1, 100);
-        break;
-      default:
-        break;
-      }
+#ifdef CLOSED_LOOP
+      sscanf((char*)&rx_buffer[1], "%f", &current_ref);
+
+#else
+      sscanf((char*)&rx_buffer[1], "%f", &duty);
+      LED_PWM_WriteDuty(&hld1, duty);
+#endif
+#ifdef CNT_MAX
+      txFlag = 1;
+#endif
     }
-    HAL_UART_Receive_IT(&huart3, rx_data, sizeof(rx_data) - 1);
+    else
+    {
+      uint8_t tx_buffer[256];
+      int resp_len = sprintf((char*)tx_buffer, "{ \"I1\":{\"value\":%f,\"unit\":\"mA\"}, \"I1REF\":{\"value\":%f,\"unit\":\"mA\"}, \"D1\":{\"value\":%f,\"unit\":\"%%\"} }\r", current, current_ref, duty);
+      HAL_UART_Transmit_DMA(&huart3, tx_buffer, resp_len);
+    }
+    HAL_UART_Receive_IT(&huart3, rx_buffer, msg_len);
   }
 }
-#endif
 
-#if TASK == 6
 /**
-  * @brief  Conversion complete callback in non-blocking mode for Channel1
-  * @param  hdac pointer to a DAC_HandleTypeDef structure that contains
-  *         the configuration information for the specified DAC.
+  * @brief  Period elapsed callback in non-blocking mode
+  * @param  htim TIM handle
   * @retval None
   */
-void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef *hdac)
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-  HAL_DAC_Stop_DMA(hdac, DAC_CHANNEL_1);
-  HAL_TIM_Base_Stop(&htim7);
+  if(htim == hld1.Output.Timer)
+  {
+    HAL_GPIO_WritePin(DEBUG1_GPIO_Port, DEBUG1_Pin, GPIO_PIN_SET);
+    HAL_ADC_Start_IT(&hadc1);
+  }
 }
+
+/**
+  * @brief  Regular conversion complete callback in non blocking mode
+  * @param  hadc pointer to a ADC_HandleTypeDef structure that contains
+  *         the configuration information for the specified ADC.
+  * @retval None
+  */
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
+  if(hadc == &hadc1)
+  {
+    float voltage = ADC_REG2VOLTAGE(HAL_ADC_GetValue(hadc)); // [mV]
+    // Ohm's law
+    current = voltage / resistance;                          // [mA]
+
+#ifdef CLOSED_LOOP
+    duty = PID_GetOutput(&hpid1, current_ref, current);  // [%]
+    LED_PWM_WriteDuty(&hld1, duty);
 #endif
+
+    HAL_GPIO_WritePin(DEBUG1_GPIO_Port, DEBUG1_Pin, GPIO_PIN_RESET);
+
+    if(cnt % cnt_dec == 0)
+    {
+      swv.measurement = current;
+      swv.reference = current_ref;
+      swv.control = duty;
+
+#ifdef CNT_MAX
+      memcpy(&txBuffer[txActiveBuffer][(cnt / cnt_dec) * sizeof(swv)], &swv, sizeof(swv));
+#endif
+    }
+
+    cnt = (cnt < cnt_dec * CNT_MAX - 1) ? (cnt + 1) : 0;
+
+#ifdef CNT_MAX
+    if(cnt == 0 && txFlag)
+    {
+      HAL_UART_Transmit_DMA(&huart3, txBuffer[txActiveBuffer], CNT_MAX*sizeof(swv));
+      txActiveBuffer ^= 1;
+    }
+#endif
+
+  }
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -214,45 +207,26 @@ int main(void)
   MX_GPIO_Init();
   MX_DMA_Init();
   MX_USART3_UART_Init();
-  MX_DAC_Init();
-  MX_TIM7_Init();
+  MX_TIM2_Init();
+  MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
-	#if TASK == 1
-  HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
-	DAC_SetVoltage(v_out);
-	#endif
-  #if TASK == 2
-  HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
-  HAL_TIM_Base_Start(&htim7);
-  #endif
-  #if TASK == 3
-  HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
-  HAL_TIM_Base_Start(&htim7);
-  HAL_UART_Receive_IT(&huart3, rx_data, sizeof(rx_data) - 1);
-  #endif
-  #if TASK == 5
-  HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t*)sine_wave_buffer, SINE_WAVE_SIZE, DAC_ALIGN_12B_R);
-  HAL_TIM_Base_Start(&htim7);
-  #endif
-  #if TASK == 6
-  HAL_DAC_Start_DMA(&hdac, DAC_CHANNEL_1, (uint32_t*)rawData, sizeof(rawData)/2, DAC_ALIGN_12B_L);
-  HAL_TIM_Base_Start(&htim7);
-  #endif
+  PID_Init(&hpid1);
+  LED_PWM_Init(&hld1);
+  HAL_TIM_Base_Start_IT(hld1.Output.Timer);
+
+#ifdef CLOSED_LOOP
+  msg_len = strlen("R00.0mA\r");
+#else
+  msg_len = strlen("R000.0%\r");
+#endif
+
+  HAL_UART_Receive_IT(&huart3, rx_buffer, msg_len);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    #if TASK == 2 || TASK == 3
-    if(__HAL_TIM_GET_FLAG(&htim7, TIM_FLAG_UPDATE))
-    {
-      __HAL_TIM_CLEAR_FLAG(&htim7, TIM_FLAG_UPDATE);
-      v_out = SINE_WAVE_GetValue(&hsine, time);
-      DAC_SetVoltage(v_out);
-      time++;
-    }
-    #endif
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -317,34 +291,7 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-#if TASK == 1 || TASK == 2 || TASK == 3
-/**
- * @brief Writes to DAC data holding register (Channel #1, 12 bits, right alignment).
- * @param[in] voltage : Voltage expressed in millivolts, in range <0 - 3300> mV
- * @retval None
- */
-void DAC_SetVoltage(float voltage)
-{
-	// TODO
-  float voltage_sat_mV = DAC_VOLTAGE_SAT(voltage);
-  uint16_t dac_reg = DAC_VOLTAGE2REG(voltage_sat_mV);
-  HAL_DAC_SetValue(&hdac, DAC_CHANNEL_1, DAC_ALIGN_12B_R, dac_reg);
-}
-#endif
-#if TASK == 2 || TASK == 3
-/**
- * @brief Computes value of given sine wave at given discrete time.
- * @param[in] sine_wave     : Structure with sine wave parameters.
- * @param[in] discrete_time : Discrete time (sample number).
- * @retval Sine wave value at discrete time.
- */
-float SINE_WAVE_GetValue(const SINE_WAVE_Handle_TypeDef* sine_wave, unsigned int discrete_time)
-{
-  float time = sine_wave->SampleTime*discrete_time;
-  float value = (sine_wave->Amplitude)*sinf(2.0f*M_PI*sine_wave->Frequency*time + sine_wave->Phase) + sine_wave->Mean;
-  return value;
-}
-#endif
+
 /* USER CODE END 4 */
 
 /**
