@@ -46,7 +46,7 @@ typedef struct {
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define CLOSED_LOOP
-#define CNT_MAX 900
+//#define CNT_MAX 900
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -65,10 +65,10 @@ float current = 0.0f;            // [mA]
 float current_ref = 0.0f;        // [mA]
 const float resistance = 100.0f; // [Ohm]
 uint32_t cnt = 0;
+const uint32_t cnt_dec = 10;
 SWV_TypeDef swv;
 
 #ifdef CNT_MAX
-const uint32_t cnt_dec = 10;
 uint8_t txBuffer[2][CNT_MAX * sizeof(swv)];
 _Bool txActiveBuffer = 0;
 _Bool txFlag = 0;
@@ -161,12 +161,16 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 #endif
     }
 
-    cnt = (cnt < cnt_dec * CNT_MAX - 1) ? (cnt + 1) : 0;
+#ifdef CNT_MAX
+      cnt = (cnt < cnt_dec * CNT_MAX - 1) ? (cnt + 1) : 0;
+#else
+      cnt++;
+#endif
 
 #ifdef CNT_MAX
     if(cnt == 0 && txFlag)
     {
-      HAL_UART_Transmit_DMA(&huart3, txBuffer[txActiveBuffer], CNT_MAX*sizeof(swv));
+      HAL_UART_Transmit_DMA(&huart3, txBufgfer[txActiveBuffer], CNT_MAX*sizeof(swv));
       txActiveBuffer ^= 1;
     }
 #endif
