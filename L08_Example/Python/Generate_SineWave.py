@@ -12,7 +12,7 @@ class SineWave:
     SampleTime: float
 
 def main():
-    sine_wave = SineWave(Amplitude=1000.0, Phase=0.0, Frequency=10.0, Mean=1000.0, SampleTime=0.001)   
+    sine_wave = SineWave(Amplitude=1500.0, Phase=0.0, Frequency=20.0, Mean=1650.0, SampleTime=0.001)   
     time = sine_wave.SampleTime * np.linspace(0, 99, 100)  
     values = (sine_wave.Amplitude)*np.sin(2*np.pi*sine_wave.Frequency*time + sine_wave.Phase) + sine_wave.Mean
     dac_reg = (4095/3300)*values

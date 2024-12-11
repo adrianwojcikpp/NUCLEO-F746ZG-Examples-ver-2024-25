@@ -46,7 +46,7 @@ typedef struct {
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define CLOSED_LOOP
-//#define CNT_MAX 900
+#define CNT_MAX 900
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -170,7 +170,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 #ifdef CNT_MAX
     if(cnt == 0 && txFlag)
     {
-      HAL_UART_Transmit_DMA(&huart3, txBufgfer[txActiveBuffer], CNT_MAX*sizeof(swv));
+      HAL_UART_Transmit_DMA(&huart3, txBuffer[txActiveBuffer], CNT_MAX*sizeof(swv));
       txActiveBuffer ^= 1;
     }
 #endif
