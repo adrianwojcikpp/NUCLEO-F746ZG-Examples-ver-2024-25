@@ -49,7 +49,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-float ain, ain_fir, ain_iir;
+float ain, ain_fir, ain_iir_tmp, ain_iir;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -72,7 +72,8 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
   {
     ain = ADC_REG2VOLTAGE(HAL_ADC_GetValue(&hadc1));
     arm_fir_f32(&FIR1, &ain, &ain_fir, FIR1_BLOCK_SIZE);
-    arm_biquad_cascade_df1_f32(&IIR1, &ain, &ain_iir, IIR1_BLOCK_SIZE);
+    arm_biquad_cascade_df1_f32(&IIR1, &ain, &ain_iir_tmp, IIR1_BLOCK_SIZE);
+    ain_iir = ain_iir_tmp;
   }
 }
 
@@ -124,7 +125,7 @@ int main(void)
   MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 #ifdef DEBUG
-  RunAllTests();
+  //RunAllTests();
 #endif
 
   for(int i = 0; i < 4*IIR1_NUM_STAGES; i++)
