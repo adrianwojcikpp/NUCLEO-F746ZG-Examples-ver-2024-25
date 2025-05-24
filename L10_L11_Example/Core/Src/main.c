@@ -125,7 +125,7 @@ int main(void)
   MX_TIM7_Init();
   /* USER CODE BEGIN 2 */
 #ifdef DEBUG
-  //RunAllTests();
+  RunAllTests();
 #endif
 
   for(int i = 0; i < 4*IIR1_NUM_STAGES; i++)
